@@ -25,22 +25,12 @@
 /*    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN */
 /*    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE */
 /*    POSSIBILITY OF SUCH DAMAGE. */
+ 
+#ifndef GUARD_EVAL_H
+#define GUARD_EVAL_H
 
-#include <stdio.h>
-#include <stdlib.h>
+#include "data.h"
 
-#include "error.h"
+struct datum *eval(struct datum *);
 
-void enomem(void)
-{
-        fputs("Out of memory.\n", stderr);
-        exit(EXIT_FAILURE);
-}
-
-void not_reached(const char *file, size_t line)
-{
-        fprintf(stderr, "Internal error: NOTREACHED at %s%zd reached\n",
-                file, line);
-        exit(EXIT_FAILURE);
-}
-
+#endif /* GUARD_EVAL_H */

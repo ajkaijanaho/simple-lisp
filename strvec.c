@@ -26,21 +26,56 @@
 /*    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE */
 /*    POSSIBILITY OF SUCH DAMAGE. */
 
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <gc.h>
+#include <string.h>
 #include "error.h"
+#include "strvec.h"
 
-void enomem(void)
+struct str_vec {
+        size_t n;
+        size_t maxn;
+        const char **vec;
+};
+
+// returns an empty string vector
+struct str_vec *str_vec_new(void)
 {
-        fputs("Out of memory.\n", stderr);
-        exit(EXIT_FAILURE);
+        struct str_vec *rv = GC_malloc(sizeof *rv);
+        if (rv == NULL) enomem();
+        rv->n = 0;
+        rv->maxn = 0;
+        rv->vec = NULL;
+        return rv;
 }
 
-void not_reached(const char *file, size_t line)
+// adds a string to the end of a string vector
+// (str is appended as is, no copy is made)
+void str_vec_append(struct str_vec *v, const char *str)
 {
-        fprintf(stderr, "Internal error: NOTREACHED at %s%zd reached\n",
-                file, line);
-        exit(EXIT_FAILURE);
+        if (v->n >= v->maxn) {
+                // double the capacity of the vector (starting with 2)
+                v->maxn = v->maxn > 0 ? 2*v->maxn : 2;
+                v->vec = GC_realloc(v->vec, v->maxn * sizeof *v->vec);
+                if (v->vec == NULL) enomem();
+        }
+        v->vec[v->n++] = str;
+}
+
+// returns the number of strings in the string vector
+size_t str_vec_len(struct str_vec *v)
+{
+        return v->n;
+}
+
+// returns a GC_malloc'd array corresponding to the string vector
+const char **str_vec_to_array(struct str_vec *v)
+{
+        // We try to make a copy so that we do not have to keep around
+        // (in the worst case) nearly double the needed memory
+        // (usually v will be garbage after this function)
+        const char **rv = GC_malloc(v->n * sizeof *rv);
+        if (rv == NULL) return v->vec;
+        memcpy(rv, v->vec, v->n * sizeof *rv);
+        return rv;
 }
 

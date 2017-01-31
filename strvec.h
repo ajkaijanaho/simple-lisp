@@ -25,22 +25,24 @@
 /*    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN */
 /*    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE */
 /*    POSSIBILITY OF SUCH DAMAGE. */
+ 
+#ifndef GUARD_STRVEC_H
+#define GUARD_STRVEC_H
 
-#include <stdio.h>
-#include <stdlib.h>
+struct str_vec;
 
-#include "error.h"
+// returns an empty string vector
+struct str_vec *str_vec_new(void);
 
-void enomem(void)
-{
-        fputs("Out of memory.\n", stderr);
-        exit(EXIT_FAILURE);
-}
+// adds a string to the end of a string vector
+// (str is appended as is, no copy is made)
+void str_vec_append(struct str_vec *, const char *str);
 
-void not_reached(const char *file, size_t line)
-{
-        fprintf(stderr, "Internal error: NOTREACHED at %s%zd reached\n",
-                file, line);
-        exit(EXIT_FAILURE);
-}
+// returns the number of strings in the string vector
+size_t str_vec_len(struct str_vec *);
 
+// returns a GC_malloc'd array corresponding to the string vector
+// NOTE: modifying the array may or may not modify the string vector
+const char **str_vec_to_array(struct str_vec *);
+
+#endif /* GUARD_STRVEC_H */

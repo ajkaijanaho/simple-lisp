@@ -31,32 +31,59 @@
 #define GUARD_DATA_H
 
 #include <stddef.h>
+#include "config.h"
+
+struct datum;
+
+// prim_fun is the name of the type of functions from struct datum *
+// to struct datum *
+typedef struct datum *(*prim_fun)(struct datum *);
 
 enum data_type {
         T_PAIR,
         T_NUMBER,
-        T_SYMBOL
+        T_SYMBOL,
+        // internal data types
+        T_ERROR,
+        T_PRIMITIVE,
+        T_CLOSURE,
 };
-
-struct datum;
 
 struct datum *make_pair(struct datum *, struct datum *);
 struct datum *make_numeric_atom(double);
 struct datum *make_symbolic_atom(const char *name, size_t len);
+struct datum *make_symbolic_atom_cstr(const char *name);
+FORMAT(struct datum *make_error(struct datum *where, const char *fmt,
+                                ...), printf, 2, 3);
+struct datum *make_primitive(prim_fun fun);
+struct datum *make_closure(struct datum *body,
+                           struct datum *env);
 struct datum *make_NIL(void);
 struct datum *make_QUOTE(void);
 
+struct datum *make_deep_copy(struct datum *);
 
 enum data_type get_type(struct datum *);
 _Bool is_NIL(struct datum *);
 
+struct datum *apply_primitive(struct datum *prim,
+                              struct datum *arg);
+
 struct datum *get_pair_first(struct datum *);
 struct datum *get_pair_second(struct datum *);
+
+struct list_data {
+        size_t n;
+        struct datum **vec;
+        struct datum *terminator;
+};
+struct list_data get_list_data(struct datum *);
 
 void set_pair_second(struct datum *pair, struct datum *replacement);
 
 double get_numeric_value(struct datum *);
 
 const char *get_symbol_name(struct datum *);
+_Bool is_this_symbol(struct datum *, const char *);
 
 #endif /* GUARD_DATA_H */

@@ -28,6 +28,9 @@
 
 #include <assert.h>
 #include <gc.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
@@ -40,9 +43,10 @@ struct datum {
                 struct {
                         struct datum *first;
                         struct datum *second;
-                } pair;
+                } pair;                
                 double number;
                 const char *symbol;
+                prim_fun primitive;
         } u;
 };
 
@@ -55,6 +59,13 @@ struct datum *make_pair(struct datum *first, struct datum *second)
         rv->u.pair.second = second;
         return rv;
 }
+struct datum *make_closure(struct datum *body,
+                           struct datum *env)
+{
+        struct datum *rv = make_pair(body, env);
+        rv->type = T_CLOSURE;
+        return rv;
+}
 struct datum *make_numeric_atom(double val)
 {
         struct datum *rv = GC_malloc(sizeof *rv);
@@ -64,17 +75,60 @@ struct datum *make_numeric_atom(double val)
         return rv;
 }
         
-struct datum *make_symbolic_atom(const char *name, size_t len)
+struct datum *make_primitive(prim_fun fun)
+{
+        struct datum *rv = GC_malloc(sizeof *rv);
+        if (rv == 0) enomem();
+        rv->type = T_PRIMITIVE;
+        rv->u.primitive = fun;
+        return rv;
+}
+
+static struct datum *make_symbolic_atom_reusing_name(const char *name,
+                                                     size_t len)
 {
         if (len == 3 && strncasecmp(name, "NIL", len) == 0) return make_NIL();
         struct datum *rv = GC_malloc(sizeof *rv);
         if (rv == 0) enomem();
         rv->type = T_SYMBOL;
+        rv->u.symbol = name;
+        return rv;
+}
+
+struct datum *make_symbolic_atom(const char *name, size_t len)
+{
+        if (len == 3 && strncasecmp(name, "NIL", len) == 0) return make_NIL();
         char * s = GC_malloc_atomic(len+1);
         if (s == 0) enomem();
         memcpy(s, name, len);
         s[len] = '\0';
-        rv->u.symbol = s;
+        return make_symbolic_atom_reusing_name(s, len);
+}
+
+struct datum *make_symbolic_atom_cstr(const char *name)
+{
+        return make_symbolic_atom(name, strlen(name));
+}
+
+struct datum *make_error(struct datum *where, const char *fmt, ...)
+{
+        va_list ap, ap1;
+        va_start(ap, fmt);
+        va_copy(ap1, ap);
+        int n = vsnprintf(NULL, 0, fmt, ap);
+        if (n < 0) NOTREACHED;
+        char *s = GC_malloc_atomic(n+1);
+        if (s == NULL) enomem();
+        int m = vsnprintf(s, n+1, fmt, ap1);
+        if (m < 0) NOTREACHED;
+        va_end(ap1);
+        va_end(ap);
+
+        struct datum *rv = GC_malloc(sizeof *rv);
+        if (rv == NULL) enomem();
+        rv->type = T_ERROR;
+        rv->u.pair.first = make_symbolic_atom_reusing_name(s, n);
+        rv->u.pair.second = make_pair(where, make_NIL());
         return rv;
 }
 
@@ -101,15 +155,39 @@ enum data_type get_type(struct datum *d)
         return d->type;
 }
 
+struct datum *apply_primitive(struct datum *prim,
+                              struct datum *arg)
+{
+        assert(prim->type == T_PRIMITIVE);
+        return prim->u.primitive(arg);
+}
+
 struct datum *get_pair_first(struct datum *d)
 {
-        assert(d->type == T_PAIR);
+        assert(d->type == T_PAIR || d->type == T_CLOSURE || d->type == T_ERROR);
         return d->u.pair.first;
 }
 struct datum *get_pair_second(struct datum *d)
 {
-        assert(d->type == T_PAIR);
+        assert(d->type == T_PAIR || d->type == T_CLOSURE || d->type == T_ERROR);
         return d->u.pair.second;
+}
+ 
+struct list_data get_list_data(struct datum *d)
+{
+        size_t maxn = 0;
+        size_t n = 0;
+        struct datum **vec = NULL;
+        while (d != NULL && d->type == T_PAIR) {
+                if (maxn >= n) {
+                        maxn = maxn == 0 ? 2 : 2*maxn;
+                        vec = GC_realloc(vec, maxn * sizeof *vec);
+                        if (vec == NULL) enomem();
+                }
+                vec[n++] = d->u.pair.first;
+                d = d->u.pair.second;
+        }
+        return (struct list_data) { .n = n, .vec = vec, .terminator = d };
 }
 
 void set_pair_second(struct datum *d, struct datum *replacement)
@@ -129,4 +207,31 @@ const char *get_symbol_name(struct datum *d)
         if (d == NULL) return "NIL";
         assert(d->type == T_SYMBOL);
         return d->u.symbol;
+}
+
+_Bool is_this_symbol(struct datum *d, const char *name)
+{
+        if (d == NULL) return strcasecmp("NIL", name) == 0;
+        if (d->type != T_SYMBOL) return 0;
+        return strcasecmp(d->u.symbol, name) == 0;
+}
+
+struct datum *make_deep_copy(struct datum *d)
+{
+        if (d == NULL) return NULL;
+        switch (d->type) {
+        case T_PAIR:
+                return make_pair(make_deep_copy(d->u.pair.first),
+                                 make_deep_copy(d->u.pair.second));
+        case T_NUMBER:
+                return make_numeric_atom(d->u.number);
+        case T_SYMBOL:
+                return make_symbolic_atom_reusing_name(d->u.symbol,
+                                                       strlen(d->u.symbol));
+        default:
+                fprintf(stderr,
+                        "Internal error in make_deep_copy (%d)",
+                        d->type);
+                exit(EXIT_FAILURE);
+        }
 }

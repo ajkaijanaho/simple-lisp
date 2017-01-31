@@ -27,12 +27,19 @@
 /*    POSSIBILITY OF SUCH DAMAGE. */
 
 #include <strings.h>
+#include "error.h"
 #include "printer.h"
 
 void print_sexp(struct datum *d, FILE *fp)
 {
         switch (get_type(d)) {
-        case T_PAIR:
+        case T_CLOSURE:
+                fputs("#<closure>", fp);
+                goto pair;
+        case T_ERROR:
+                fputs("#<error>", fp);
+                goto pair;
+        pair: case T_PAIR:
                 fputc('(', fp);
                 print_sexp(get_pair_first(d), fp);
                 d = get_pair_second(d);
@@ -53,5 +60,8 @@ void print_sexp(struct datum *d, FILE *fp)
         case T_SYMBOL:
                 fputs(get_symbol_name(d), fp);
                 return;
+        case T_PRIMITIVE:
+                fputs("#<primitive>", fp);
         }
+        NOTREACHED;
 }

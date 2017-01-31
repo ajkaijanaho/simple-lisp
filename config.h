@@ -25,22 +25,24 @@
 /*    LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN */
 /*    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE */
 /*    POSSIBILITY OF SUCH DAMAGE. */
+ 
+#ifndef GUARD_CONFIG_H
+#define GUARD_CONFIG_H
 
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef __has_attribute
+# define __has_attribute(x) 0
+#endif
 
-#include "error.h"
+#if defined(__GNUC__) || __has_attribute(noreturn)
+#  define NORETURN(x) x __attribute__((noreturn))
+#else
+#  define NORETURN(x) x
+#endif
 
-void enomem(void)
-{
-        fputs("Out of memory.\n", stderr);
-        exit(EXIT_FAILURE);
-}
+#if defined(__GNUC__) || __has_attribute(format)
+#  define FORMAT(f,x,y,z) f __attribute__((format(x,y,z)))
+#else
+#  define FORMAT(f,x,y,z) f
+#endif
 
-void not_reached(const char *file, size_t line)
-{
-        fprintf(stderr, "Internal error: NOTREACHED at %s%zd reached\n",
-                file, line);
-        exit(EXIT_FAILURE);
-}
-
+#endif /* GUARD_CONFIG_H */

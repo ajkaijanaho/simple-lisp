@@ -29,6 +29,11 @@
 #ifndef GUARD_ERROR_H
 #define GUARD_ERROR_H
 
-void enomem(void);
+#include "config.h"
+
+#define NOTREACHED (not_reached(__FILE__, __LINE__))
+
+NORETURN(void enomem(void));
+NORETURN(void not_reached(const char *file, size_t line));
 
 #endif /* GUARD_ERROR_H */
