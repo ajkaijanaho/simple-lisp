@@ -32,7 +32,7 @@
 #include "error.h"
 #include "eval.h"
 
-// env is assumed to be a (proper or imprpert) list of pairs; we find
+// env is assumed to be a (proper or improper) list of pairs; we find
 // the first pair whose left component is the name symbol and return
 // its right component;
 // - returns  NIL if not found;
