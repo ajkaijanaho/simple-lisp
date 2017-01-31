@@ -154,11 +154,26 @@ static struct datum *eval_term(struct term *t,
         {
                 struct mu_term *mt = term_as_mu_term(t);
                 return eval_datum
-                        (mt->body, make_pair(make_symbolic_atom_cstr(mt->var),
-                                             mt->body));
+                        (mt->body,
+                         make_pair
+                         (make_pair(make_symbolic_atom_cstr(mt->var),
+                                    get_original_sexp(t)),
+                          env));
         }
         case TT_ABS:
                 return make_closure(get_original_sexp(t), env);
+        case TT_GUARDED:
+        {
+                struct guarded_term *gt = term_as_guarded_term(t);
+                do {
+                        struct datum *test_result = eval_datum(gt->guard, env);
+                        if (!is_NIL(test_result)) {
+                                return eval_datum(gt->term, env);
+                        }
+                        gt = gt->next;
+                } while (gt != NULL);
+                return make_NIL();
+        }
         }
         NOTREACHED;
 }        

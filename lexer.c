@@ -80,7 +80,7 @@ int yylex(void)
         default:
         {
                 int start = line_inx;
-                while (line_inx < line_len && isgraph(line[line_inx])) {
+                while (line_inx < line_len && !isspace(line[line_inx])) {
                         char c = line[line_inx];
                         if (c == '(' || c == ')') break;
                         line_inx++;
