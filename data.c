@@ -144,6 +144,14 @@ struct datum *make_QUOTE(void) {
         return rv;
 }
 
+struct datum *make_T(void) {
+        struct datum *rv = GC_malloc(sizeof *rv);
+        if (rv == 0) enomem();
+        rv->type = T_SYMBOL;
+        rv->u.symbol = "T";
+        return rv;
+}
+
 _Bool is_NIL(struct datum *d)
 {
         return d == NULL;

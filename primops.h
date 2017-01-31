@@ -26,15 +26,11 @@
 /*    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE */
 /*    POSSIBILITY OF SUCH DAMAGE. */
  
-#ifndef GUARD_ERROR_H
-#define GUARD_ERROR_H
+#ifndef GUARD_PRIMOPS_H
+#define GUARD_PRIMOPS_H
 
-#include "config.h"
-#include "stddef.h"
+#include "data.h"
 
-#define NOTREACHED (not_reached(__FILE__, __LINE__))
+struct datum *get_primops_alist(void);
 
-NORETURN(void enomem(void));
-NORETURN(void not_reached(const char *file, size_t line));
-
-#endif /* GUARD_ERROR_H */
+#endif /* GUARD_PRIMOPS_H */

@@ -31,6 +31,7 @@
 #include "ast.h"
 #include "error.h"
 #include "eval.h"
+#include "primops.h"
 
 // env is assumed to be a (proper or improper) list of pairs; we find
 // the first pair whose left component is the name symbol and return
@@ -184,5 +185,7 @@ static struct datum *eval_datum(struct datum *d, struct datum *env)
 }
 struct datum *eval(struct datum *d)
 {
-        return eval_datum(d, make_NIL());
+        static struct datum *global_env = NULL;
+        if (global_env == NULL) global_env = get_primops_alist();
+        return eval_datum(d, global_env);
 }

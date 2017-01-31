@@ -58,6 +58,7 @@ FORMAT(struct datum *make_error(struct datum *where, const char *fmt,
 struct datum *make_primitive(prim_fun fun);
 struct datum *make_closure(struct datum *body,
                            struct datum *env);
+struct datum *make_T(void);
 struct datum *make_NIL(void);
 struct datum *make_QUOTE(void);
 
