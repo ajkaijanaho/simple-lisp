@@ -118,13 +118,14 @@ static struct term *parse_list(struct datum *d)
                              get_type(it) == T_PAIR;
                              it = get_pair_second(it)) {
                                 struct datum *p = get_pair_first(it);
-                                if (get_type(p) != T_PAIR) {
+                                struct list_data pd = get_list_data(p);
+                                if (pd.n != 2 || !is_NIL(pd.terminator)) {
                                         return new_term(TT_OTHER, d);
                                 }
                                 struct guarded_term *gt = GC_malloc(sizeof *gt);
                                 if (gt == NULL) enomem();
-                                gt->guard = get_pair_first(p);
-                                gt->term = get_pair_second(p);
+                                gt->guard = pd.vec[0];
+                                gt->term = pd.vec[1];
                                 gt->next = NULL;
                                 if (first == NULL) {
                                         assert(last == NULL);
