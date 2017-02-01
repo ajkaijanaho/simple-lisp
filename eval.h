@@ -31,6 +31,10 @@
 
 #include "data.h"
 
+/*  Evaluates a Lisp term, represented as S-expression data, in the
+    global environment.  The result is a Lisp datum representing the
+    value of the term.
+ */
 struct datum *eval(struct datum *);
 
 #endif /* GUARD_EVAL_H */

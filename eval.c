@@ -33,12 +33,16 @@
 #include "eval.h"
 #include "primops.h"
 
-// env is assumed to be a (proper or improper) list of pairs; we find
-// the first pair whose left component is the name symbol and return
-// its right component;
-// - returns  NIL if not found;
-// - if an element of the list is not a pair, it is skipped
-// - the list terminator is ignored
+/* Looks up the binding of a variable in the given environment.
+
+   The environment is represented here as a (Lisp data) list of pairs:
+   each pair gives first the name of the variable and then the 
+   Lisp datum bound to it.
+
+   - returns  NIL if not found;
+   - if an element of the list is not a pair, it is skipped
+   - the list terminator is ignored
+*/
 static struct datum *lookup(struct datum *env, const char *name) {
         for (struct datum *it = env;
              get_type(it) == T_PAIR;
@@ -54,6 +58,16 @@ static struct datum *lookup(struct datum *env, const char *name) {
 
 static struct datum *eval_datum(struct datum *d, struct datum *env);
 
+/* Applies the given function to the given argument.
+
+   The function is assumed to be a fully evaluated datum, and the
+   argument is assumed to be a list of fully evaluated data.  The
+   function will thus not be source code (lambda or like) but a
+   T_PRIMITIVE or T_CLOSURE value.
+
+   The result is the result value of the function applied to the
+   argument.
+ */
 static struct datum *apply(struct datum *fun,
                            struct datum *arg)
 {
@@ -101,16 +115,26 @@ static struct datum *apply(struct datum *fun,
 }
 
 
+/*  Evaluates a Lisp term, which has already been parsed using
+    parse_sexp_as_term (in ast.h and ast.c), in the environment given.
+    The format of env is specified in the comment introducing lookup,
+    above.  The result is a Lisp datum representing the value of the
+    term.
+ */
 static struct datum *eval_term(struct term *t,
                                struct datum *env)
 {
         switch (get_term_type(t)) {
         case TT_OTHER:
+                // TT_OTHER indicates that this is not a term as we
+                // understand it here
                 return make_error(get_original_sexp(t),
                                   "ERROR: Cannot evaluate");
         case TT_DATA:
+                // TT_DATA evaluates to itself
                 return get_original_sexp(t);
         case TT_VAR:
+                // we look up the binding of the variable in the environment
         {
                 const char *name = term_as_var_term(t)->name;
                 struct datum *def = lookup(env, name);
@@ -121,10 +145,15 @@ static struct datum *eval_term(struct term *t,
                 return def;
         }
         case TT_APP:
+                // This is an application of the form (f a1 a2 ... an).
+                // We will fully evaluate the function and each of the
+                // arguments, and then call apply.
         {
                 struct app_term *at = term_as_app_term(t);
+                // evaluate function
                 struct datum *fun = eval_datum(at->left, env);
                 if (get_type(fun) == T_ERROR) return fun;
+                // evaluate arguments
                 struct datum *arg = make_NIL();
                 struct datum *last = make_NIL();
                 struct datum *it;
@@ -145,6 +174,9 @@ static struct datum *eval_term(struct term *t,
                         }
                 }
                 if (!is_NIL(it)) {
+                        // the argument list is improper; evaluate
+                        // the terminator and construct the argument value
+                        // list as improper too
                         struct datum *res = eval_datum(get_pair_first(it), env);
                         if (get_type(res) == T_ERROR) return res;
                         set_pair_second(last, res);
@@ -152,6 +184,8 @@ static struct datum *eval_term(struct term *t,
                 return apply(fun, arg);
         }
         case TT_MU:
+                // recursion term (LABEL f ...); we just bind f to this term
+                // and evaluate the body, returning the value of the body
         {
                 struct mu_term *mt = term_as_mu_term(t);
                 return eval_datum
@@ -162,8 +196,16 @@ static struct datum *eval_term(struct term *t,
                           env));
         }
         case TT_ABS:
+                // Here we evaluate an abstraction.  The result is a
+                // closure, that is, essentially a pair of the
+                // original lambda term together with the environment
+                // here.  Thus, any free variables in the function get
+                // their values from here and not from the call site.
+                // This solves the environment (funarg) problem, and
+                // avoids variable capture.
                 return make_closure(get_original_sexp(t), env);
         case TT_GUARDED:
+                // (COND ...)
         {
                 struct guarded_term *gt = term_as_guarded_term(t);
                 do {
@@ -179,6 +221,11 @@ static struct datum *eval_term(struct term *t,
         NOTREACHED;
 }        
 
+/*  Evaluates a Lisp term, represented as S-expression data, in the
+    environment given.  The format of env is specified in the comment
+    introducing lookup, above.  The result is a Lisp datum
+    representing the value of the term.
+ */
 static struct datum *eval_datum(struct datum *d, struct datum *env)
 {
         return eval_term(parse_sexp_as_term(d), env);
