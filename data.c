@@ -128,7 +128,8 @@ struct datum *make_error(struct datum *where, const char *fmt, ...)
         if (rv == NULL) enomem();
         rv->type = T_ERROR;
         rv->u.pair.first = make_symbolic_atom_reusing_name(s, n);
-        rv->u.pair.second = make_pair(where, make_NIL());
+        rv->u.pair.second = make_pair(make_pair(where, make_NIL()),
+                                      make_NIL());
         return rv;
 }
 

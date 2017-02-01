@@ -62,6 +62,7 @@ void print_sexp(struct datum *d, FILE *fp)
                 return;
         case T_PRIMITIVE:
                 fputs("#<primitive>", fp);
+                return;
         }
         NOTREACHED;
 }

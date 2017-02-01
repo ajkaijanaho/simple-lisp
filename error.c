@@ -39,7 +39,7 @@ void enomem(void)
 
 void not_reached(const char *file, size_t line)
 {
-        fprintf(stderr, "Internal error: NOTREACHED at %s%zd reached\n",
+        fprintf(stderr, "Internal error: NOTREACHED at %s:%zd reached\n",
                 file, line);
         exit(EXIT_FAILURE);
 }
