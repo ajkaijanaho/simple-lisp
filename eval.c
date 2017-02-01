@@ -153,13 +153,21 @@ static struct datum *eval_term(struct term *t,
                 return apply(fun, arg);
         }
         case TT_MU:
-                // recursion term (LABEL f ...); we just bind f to this term
-                // and evaluate the body, returning the value of the body
+                // recursion term (LABEL f ...).
+                // This is a bit tricky.  We bind the recursion variable
+                // to a blackhole before evaluation and replace the blackhole
+                // with the real value afterward.  If the blackhole is ever
+                // evaluated, this means that there is an infinite recursion.
+                // Normally, references to the recursion variable are protected
+                // from evaluation by a lambda.
         {
                 struct mu_term *mt = term_as_mu_term(t);
                 struct env *nenv = env_clone(env);
-                env_bind(nenv, mt->var, get_original_sexp(t));
-                return eval_datum(mt->body, nenv);
+                env_bind(nenv, mt->var, make_error(get_original_sexp(t),
+                                                   "Infinite recursion."));
+                struct datum *rv = eval_datum(mt->body, nenv);
+                env_bind(nenv, mt->var, rv);
+                return rv;
         }
         case TT_ABS:
                 // Here we evaluate an abstraction.  The result is a
