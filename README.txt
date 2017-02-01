@@ -10,7 +10,8 @@ The language is specified in
   http://users.jyu.fi/~antkaij/opetus/okp/2017/lambda-calculus3.pdf
 
 The implementation language is C99 and should compile on any modern C
-compiler.  I have tested it using gcc 6.2.0 on Ubuntu 16.10.
+compiler.  I have tested it using gcc 6.2.0 and clang 3.8.1 on Ubuntu
+16.10.  I recommend using clang.
 
 A yacc is required.  I have tested byacc on Ubuntu 16.10.
 
@@ -18,9 +19,9 @@ Nonstandard libraries required (Ubuntu package name in parentheses)
   - GNU Readline (libreadline-dev) [BSD libedit may also work, not tested]
   - Boehm-Demers-Weiser garbage collector (libgc-dev)
 
-Once you have gcc, byacc, libreadline-dev and libgc-dev (or
+Once you have clang, byacc, libreadline-dev and libgc-dev (or
 equivalents on other systems) installed, just type "make" to the shell
-command prompt.
+command prompt.  If you use gcc, you need to edit the Makefile first.
 
 
 By

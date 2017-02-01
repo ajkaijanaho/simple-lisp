@@ -1,6 +1,6 @@
 
-CC = gcc --std=c99
-CFLAGS = -Wall -Wextra -g 
+CC = clang --std=c99
+CFLAGS = -Wall -Wextra -g -O2
 LDFLAGS = 
 LDLIBS = -lreadline -lgc
 
