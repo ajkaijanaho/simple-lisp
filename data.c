@@ -35,6 +35,7 @@
 #include <strings.h>
 
 #include "data.h"
+#include "env.h"
 #include "error.h"
 
 struct datum {
@@ -44,6 +45,10 @@ struct datum {
                         struct datum *first;
                         struct datum *second;
                 } pair;                
+                struct {
+                        struct datum *fun;
+                        struct env *env;
+                } closure;                
                 double number;
                 const char *symbol;
                 prim_fun primitive;
@@ -60,10 +65,13 @@ struct datum *make_pair(struct datum *first, struct datum *second)
         return rv;
 }
 struct datum *make_closure(struct datum *body,
-                           struct datum *env)
+                           struct env *env)
 {
-        struct datum *rv = make_pair(body, env);
+        struct datum *rv = GC_malloc(sizeof *rv);
+        if (rv == 0) enomem();
         rv->type = T_CLOSURE;
+        rv->u.closure.fun = body;
+        rv->u.closure.env = env;
         return rv;
 }
 struct datum *make_numeric_atom(double val)
@@ -173,14 +181,26 @@ struct datum *apply_primitive(struct datum *prim,
 
 struct datum *get_pair_first(struct datum *d)
 {
-        assert(d->type == T_PAIR || d->type == T_CLOSURE || d->type == T_ERROR);
+        assert(d->type == T_PAIR || d->type == T_ERROR);
         return d->u.pair.first;
 }
 struct datum *get_pair_second(struct datum *d)
 {
-        assert(d->type == T_PAIR || d->type == T_CLOSURE || d->type == T_ERROR);
+        assert(d->type == T_PAIR || d->type == T_ERROR);
         return d->u.pair.second;
 }
+struct datum *get_closure_fun(struct datum *d)
+{
+        assert(d->type == T_CLOSURE);
+        return d->u.closure.fun;
+}
+struct env *get_closure_env(struct datum *d)
+{
+        assert(d->type == T_CLOSURE);
+        return d->u.closure.env;
+}
+
+
  
 struct list_data get_list_data(struct datum *d)
 {

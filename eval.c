@@ -30,33 +30,12 @@
 #include <string.h>
 #include "ast.h"
 #include "error.h"
+#include "env.h"
 #include "eval.h"
 #include "primops.h"
 
-/* Looks up the binding of a variable in the given environment.
 
-   The environment is represented here as a (Lisp data) list of pairs:
-   each pair gives first the name of the variable and then the 
-   Lisp datum bound to it.
-
-   - returns  NIL if not found;
-   - if an element of the list is not a pair, it is skipped
-   - the list terminator is ignored
-*/
-static struct datum *lookup(struct datum *env, const char *name) {
-        for (struct datum *it = env;
-             get_type(it) == T_PAIR;
-             it = get_pair_second(it)) {
-                struct datum *p = get_pair_first(it);
-                if (get_type(p) != T_PAIR) continue;
-                if (is_this_symbol(get_pair_first(p), name)) {
-                        return get_pair_second(p);
-                }
-        }
-        return make_NIL();
-}
-
-static struct datum *eval_datum(struct datum *d, struct datum *env);
+static struct datum *eval_datum(struct datum *d, struct env *env);
 
 /* Applies the given function to the given argument.
 
@@ -81,9 +60,9 @@ static struct datum *apply(struct datum *fun,
                 return apply_primitive(fun, arg);
         case T_CLOSURE:
         {
-                struct datum *env = get_pair_second(fun);
+                struct env *env = env_clone(get_closure_env(fun));
                 struct abs_term *abs = term_as_abs_term(parse_sexp_as_term
-                                                        (get_pair_first(fun)));
+                                                        (get_closure_fun(fun)));
                 struct datum *it = arg;
                 for (size_t i = 0; i < abs->num_params; i++) {
                         if (get_type(it) != T_PAIR) {
@@ -91,19 +70,11 @@ static struct datum *apply(struct datum *fun,
                                                   "Missing a parameter for %s",
                                                   abs->params[i]);
                         }
-                        env = make_pair
-                                (make_pair
-                                 (make_symbolic_atom_cstr(abs->params[i]),
-                                  get_pair_first(it)),
-                                 env);
+                        env_bind(env, abs->params[i], get_pair_first(it));
                         it = get_pair_second(it);
                 }
                 if (abs->rest_param_name != NULL) {
-                        env = make_pair
-                                (make_pair
-                                 (make_symbolic_atom_cstr(abs->rest_param_name),
-                                  it),
-                                 env);
+                        env_bind(env, abs->rest_param_name, it);
                 } else if (!is_NIL(it)) {
                         return make_error(make_pair(fun, arg),
                                           "Too many parameters");
@@ -117,12 +88,10 @@ static struct datum *apply(struct datum *fun,
 
 /*  Evaluates a Lisp term, which has already been parsed using
     parse_sexp_as_term (in ast.h and ast.c), in the environment given.
-    The format of env is specified in the comment introducing lookup,
-    above.  The result is a Lisp datum representing the value of the
-    term.
+    The result is a Lisp datum representing the value of the term.
  */
 static struct datum *eval_term(struct term *t,
-                               struct datum *env)
+                               struct env *env)
 {
         switch (get_term_type(t)) {
         case TT_OTHER:
@@ -137,8 +106,8 @@ static struct datum *eval_term(struct term *t,
                 // we look up the binding of the variable in the environment
         {
                 const char *name = term_as_var_term(t)->name;
-                struct datum *def = lookup(env, name);
-                if (is_NIL(def)) {
+                struct datum *def;
+                if (!env_lookup(env, name, &def)) {
                         return make_error(get_original_sexp(t),
                                           "ERROR: Undefined variable");
                 }
@@ -188,12 +157,9 @@ static struct datum *eval_term(struct term *t,
                 // and evaluate the body, returning the value of the body
         {
                 struct mu_term *mt = term_as_mu_term(t);
-                return eval_datum
-                        (mt->body,
-                         make_pair
-                         (make_pair(make_symbolic_atom_cstr(mt->var),
-                                    get_original_sexp(t)),
-                          env));
+                struct env *nenv = env_clone(env);
+                env_bind(nenv, mt->var, get_original_sexp(t));
+                return eval_datum(mt->body, nenv);
         }
         case TT_ABS:
                 // Here we evaluate an abstraction.  The result is a
@@ -222,17 +188,16 @@ static struct datum *eval_term(struct term *t,
 }        
 
 /*  Evaluates a Lisp term, represented as S-expression data, in the
-    environment given.  The format of env is specified in the comment
-    introducing lookup, above.  The result is a Lisp datum
-    representing the value of the term.
+    environment given.  The result is a Lisp datum representing the
+    value of the term.
  */
-static struct datum *eval_datum(struct datum *d, struct datum *env)
+static struct datum *eval_datum(struct datum *d, struct env *env)
 {
         return eval_term(parse_sexp_as_term(d), env);
 }
 struct datum *eval(struct datum *d)
 {
-        static struct datum *global_env = NULL;
-        if (global_env == NULL) global_env = get_primops_alist();
+        static struct env *global_env = NULL;
+        if (global_env == NULL) global_env = get_primops_env();
         return eval_datum(d, global_env);
 }

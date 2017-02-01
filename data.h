@@ -34,6 +34,7 @@
 #include "config.h"
 
 struct datum;
+struct env;
 
 // prim_fun is the name of the type of functions from struct datum *
 // to struct datum *
@@ -57,7 +58,7 @@ FORMAT(struct datum *make_error(struct datum *where, const char *fmt,
                                 ...), printf, 2, 3);
 struct datum *make_primitive(prim_fun fun);
 struct datum *make_closure(struct datum *body,
-                           struct datum *env);
+                           struct env *env);
 struct datum *make_T(void);
 struct datum *make_NIL(void);
 struct datum *make_QUOTE(void);
@@ -72,6 +73,9 @@ struct datum *apply_primitive(struct datum *prim,
 
 struct datum *get_pair_first(struct datum *);
 struct datum *get_pair_second(struct datum *);
+
+struct datum *get_closure_fun(struct datum *);
+struct env *get_closure_env(struct datum *);
 
 struct list_data {
         size_t n;

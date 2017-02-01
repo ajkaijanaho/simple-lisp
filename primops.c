@@ -183,15 +183,11 @@ static const struct primop primops[] = {
         { "DIV", prim_DIV },
 };
 
-struct datum *get_primops_alist(void)
+struct env *get_primops_env(void)
 {
-        struct datum *rv = make_NIL();
+        struct env *rv = make_empty_env();
         for (size_t i = 0; i < sizeof primops / sizeof *primops; i++) {
-                rv = make_pair
-                        (make_pair
-                         (make_symbolic_atom_cstr(primops[i].name),
-                          make_primitive(primops[i].fun)),
-                         rv);
+                env_bind(rv, primops[i].name, make_primitive(primops[i].fun));
         }
         return rv;
 }

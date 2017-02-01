@@ -35,7 +35,8 @@ void print_sexp(struct datum *d, FILE *fp)
         switch (get_type(d)) {
         case T_CLOSURE:
                 fputs("#<closure>", fp);
-                goto pair;
+                print_sexp(get_closure_fun(d), fp);
+                return;
         case T_ERROR:
                 fputs("#<error>", fp);
                 goto pair;

@@ -26,11 +26,30 @@
 /*    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE */
 /*    POSSIBILITY OF SUCH DAMAGE. */
  
-#ifndef GUARD_PRIMOPS_H
-#define GUARD_PRIMOPS_H
 
-#include "env.h"
+#ifndef GUARD_ENV_H
+#define GUARD_ENV_H
 
-struct env *get_primops_env(void);
+#include <stdbool.h>
+#include "data.h"
 
-#endif /* GUARD_PRIMOPS_H */
+struct env;
+
+/* Constructs a new, empty environment. */
+struct env *make_empty_env(void);
+
+/* Look up the value bound to this name.  If a value is found, returns
+   true and assigns the value to *out.  If no value is found, returns
+   false and does not touch *out.
+ */
+bool env_lookup(struct env *, const char *name, struct datum **out);
+
+/* Binds the binding to the name.  Any previous binding is overwritten. */
+void env_bind(struct env *, const char *name, struct datum *binding);
+
+/* Makes a clone of this environment.  The return value has the same
+   bindings as the original, but subsequent modifications of either do
+   not affect the other. */
+struct env *env_clone(struct env *);
+
+#endif /* GUARD_ENV_H */
