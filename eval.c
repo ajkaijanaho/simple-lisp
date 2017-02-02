@@ -146,9 +146,13 @@ static struct datum *eval_term(struct term *t,
                         // the argument list is improper; evaluate
                         // the terminator and construct the argument value
                         // list as improper too
-                        struct datum *res = eval_datum(get_pair_first(it), env);
+                        struct datum *res = eval_datum(it, env);
                         if (get_type(res) == T_ERROR) return res;
-                        set_pair_second(last, res);
+                        if (is_NIL(last)) {
+                                last = res;
+                        } else {
+                                set_pair_second(last, res);
+                        }
                 }
                 return apply(fun, arg);
         }
