@@ -64,9 +64,10 @@ int yylex(void)
                 } else {
                         static char buf[2048];
                         line_len = fread(buf, sizeof *buf, sizeof buf, stdin);
-                        if (feof(stdin)) {
+                        if (line_len == 0 && feof(stdin)) {
                                 return 0;
-                        } else if (ferror(stdin)) {
+                        }
+                        if (ferror(stdin)) {
                                 fprintf(stderr, "Input error.\n");
                                 exit(EXIT_FAILURE);
                         }
