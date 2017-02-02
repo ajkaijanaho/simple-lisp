@@ -76,7 +76,7 @@ static struct datum *prim_CONS(struct datum *d)
 {
         struct list_data dd = get_list_data(d);
         if (dd.n != 2 || !is_NIL(dd.terminator)) {
-                make_error(d, "CONS: incorrect parameter list");
+                return make_error(d, "CONS: incorrect parameter list");
         }
         return make_pair(dd.vec[0], dd.vec[1]);
 }
@@ -85,10 +85,10 @@ static struct datum *prim_CAR(struct datum *d)
 {
         struct list_data dd = get_list_data(d);
         if (dd.n != 1 || !is_NIL(dd.terminator)) {
-                make_error(d, "CAR: incorrect parameter list");
+                return make_error(d, "CAR: incorrect parameter list");
         }
         if (get_type(dd.vec[0]) != T_PAIR) {
-                make_error(d, "CAR: not a pair");
+                return make_error(d, "CAR: not a pair");
         }
         return get_pair_first(dd.vec[0]);
 }
@@ -97,10 +97,10 @@ static struct datum *prim_CDR(struct datum *d)
 {
         struct list_data dd = get_list_data(d);
         if (dd.n != 1 || !is_NIL(dd.terminator)) {
-                make_error(d, "CDR: incorrect parameter list");
+                return make_error(d, "CDR: incorrect parameter list");
         }
         if (get_type(dd.vec[0]) != T_PAIR) {
-                make_error(d, "CDR: not a pair");
+                return make_error(d, "CDR: not a pair");
         }
         return get_pair_second(dd.vec[0]);
 }
@@ -109,11 +109,11 @@ static struct datum *prim_ADD(struct datum *d)
 {
         struct list_data dd = get_list_data(d);
         if (dd.n != 2 || !is_NIL(dd.terminator)) {
-                make_error(d, "ADD: incorrect parameter list");
+                return make_error(d, "ADD: incorrect parameter list");
         }
         if (get_type(dd.vec[0]) != T_NUMBER ||
             get_type(dd.vec[1]) != T_NUMBER) {
-                make_error(d, "ADD: type error");
+                return make_error(d, "ADD: type error");
         }
         return make_numeric_atom(get_numeric_value(dd.vec[0])
                                  +
@@ -124,11 +124,11 @@ static struct datum *prim_SUB(struct datum *d)
 {
         struct list_data dd = get_list_data(d);
         if (dd.n != 2 || !is_NIL(dd.terminator)) {
-                make_error(d, "SUB: incorrect parameter list");
+                return make_error(d, "SUB: incorrect parameter list");
         }
         if (get_type(dd.vec[0]) != T_NUMBER ||
             get_type(dd.vec[1]) != T_NUMBER) {
-                make_error(d, "SUB: type error");
+                return make_error(d, "SUB: type error");
         }
         return make_numeric_atom(get_numeric_value(dd.vec[0])
                                  -
@@ -139,11 +139,11 @@ static struct datum *prim_MUL(struct datum *d)
 {
         struct list_data dd = get_list_data(d);
         if (dd.n != 2 || !is_NIL(dd.terminator)) {
-                make_error(d, "MUL: incorrect parameter list");
+                return make_error(d, "MUL: incorrect parameter list");
         }
         if (get_type(dd.vec[0]) != T_NUMBER ||
             get_type(dd.vec[1]) != T_NUMBER) {
-                make_error(d, "MUL: type error");
+                return make_error(d, "MUL: type error");
         }
         return make_numeric_atom(get_numeric_value(dd.vec[0])
                                  *
@@ -154,11 +154,11 @@ static struct datum *prim_DIV(struct datum *d)
 {
         struct list_data dd = get_list_data(d);
         if (dd.n != 2 || !is_NIL(dd.terminator)) {
-                make_error(d, "DIV: incorrect parameter list");
+                return make_error(d, "DIV: incorrect parameter list");
         }
         if (get_type(dd.vec[0]) != T_NUMBER ||
             get_type(dd.vec[1]) != T_NUMBER) {
-                make_error(d, "DIV: type error");
+                return make_error(d, "DIV: type error");
         }
         return make_numeric_atom(get_numeric_value(dd.vec[0])
                                  /
