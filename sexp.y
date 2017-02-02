@@ -39,11 +39,19 @@
 %}
 
 %token ATOM
+%token INTERACTIVE NONINTERACTIVE
 
 %%
 
+input : /**/
+      | input INTERACTIVE session
+      | input NONINTERACTIVE script
+
+session : /**/
+        | session sexp { print_sexp(eval($2), stdout); putchar('\n'); }
+
 script : /**/
-     | script sexp              { print_sexp(eval($2), stdout); putchar('\n'); }
+       | script sexp   { eval($2); }
 
 sexp : ATOM                       { $$ = $1; }
      | '(' ')'                    { $$ = make_NIL(); }

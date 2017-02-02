@@ -31,11 +31,12 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-
+#include <unistd.h>
 #include "data.h"
 #include "y.tab.h"
 #include "lexer.h"
 
+enum { UNDETERMINED, NOTTY, TTY } input_type = UNDETERMINED;
 static char *line = NULL;
 static size_t line_len = 0;
 static size_t line_inx = 0;
@@ -43,12 +44,34 @@ static size_t open_parens = 0;
 
 int yylex(void)
 {
+        if (input_type == UNDETERMINED) {
+                if (isatty(STDIN_FILENO)) {
+                        input_type = TTY;
+                        return INTERACTIVE;
+                } else {
+                        input_type = NOTTY;
+                        return NONINTERACTIVE;
+                }
+                
+        }
         while (line_inx < line_len && isspace(line[line_inx])) line_inx++;
         while (line_inx >= line_len) {
-                free(line);
-                line = readline(open_parens > 0 ? ": " : "> ");
-                if (line == NULL) return 0;
-                line_len = strlen(line);
+                if (input_type == TTY) {
+                        free(line);
+                        line = readline(open_parens > 0 ? ": " : "> ");
+                        if (line == NULL) return 0;
+                        line_len = strlen(line);
+                } else {
+                        static char buf[2048];
+                        line_len = fread(buf, sizeof *buf, sizeof buf, stdin);
+                        if (feof(stdin)) {
+                                return 0;
+                        } else if (ferror(stdin)) {
+                                fprintf(stderr, "Input error.\n");
+                                exit(EXIT_FAILURE);
+                        }
+                        line = buf;
+                }
                 line_inx = 0;
                 while (line_inx < line_len && isspace(line[line_inx])) {
                         line_inx++;

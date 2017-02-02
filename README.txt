@@ -13,6 +13,9 @@ The implementation language is C99 and should compile on any modern C
 compiler.  I have tested it using gcc 6.2.0 and clang 3.8.1 on Ubuntu
 16.10.  I recommend using clang.
 
+There is a single dependency to POSIX: lexer.c uses isatty, which is
+not a standard C function, but is a part of POSIX.
+
 A yacc is required.  I have tested byacc on Ubuntu 16.10.
 
 Nonstandard libraries required (Ubuntu package name in parentheses)
