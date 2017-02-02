@@ -9,6 +9,17 @@ are supported at this time.
 The language is specified in
   http://users.jyu.fi/~antkaij/opetus/okp/2017/lambda-calculus3.pdf
 
+There are the following extensions to that language:
+
+  (DEFINE (var def) ... (var def))
+
+  binds each var to the corresponding def in the current environment.
+  The definitions can be mutually recursive.
+
+  (PRINT sexp)
+
+  Prints the sexp to stdout followed by newline.
+
 The implementation language is C99 and should compile on any modern C
 compiler.  I have tested it using gcc 6.2.0 and clang 3.8.1 on Ubuntu
 16.10.  I recommend using clang.

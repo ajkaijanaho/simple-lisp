@@ -29,6 +29,7 @@
 
 #include "error.h"
 #include "primops.h"
+#include "printer.h"
 
 static struct datum *prim_EQ(struct datum *d)
 {
@@ -165,6 +166,18 @@ static struct datum *prim_DIV(struct datum *d)
                                  get_numeric_value(dd.vec[1]));
 }
 
+static struct datum *prim_PRINT(struct datum *d)
+{
+        struct list_data dd = get_list_data(d);
+        if (dd.n != 1 || !is_NIL(dd.terminator)) {
+                return make_error(d, "PRINT: incorrect parameter list");
+        }
+        print_sexp(dd.vec[0], stdout);
+        putchar('\n');
+        return make_NIL();
+}
+
+
 
 
 struct primop {
@@ -181,6 +194,7 @@ static const struct primop primops[] = {
         { "SUB", prim_SUB },
         { "MUL", prim_MUL },
         { "DIV", prim_DIV },
+        { "PRINT", prim_PRINT },
 };
 
 struct env *get_primops_env(void)

@@ -43,6 +43,7 @@ struct term {
                 struct abs_term abs;
                 struct mu_term mu;
                 struct guarded_term *guarded;
+                struct define_term *define;
         } u;
 };
 
@@ -141,6 +142,41 @@ static struct term *parse_list(struct datum *d)
                         rv->u.guarded = first;
                         return rv;
                 }
+                if (is_this_symbol(head, "DEFINE")) {
+                        struct define_term *first = NULL;
+                        struct define_term *last = NULL;
+                        struct datum *it;
+                        for (it = rest;
+                             get_type(it) == T_PAIR;
+                             it = get_pair_second(it)) {
+                                struct datum *p = get_pair_first(it);
+                                struct list_data pd = get_list_data(p);
+                                if (pd.n != 2 || !is_NIL(pd.terminator)) {
+                                        return new_term(TT_OTHER, d);
+                                }
+                                if (get_type(pd.vec[0]) != T_SYMBOL) {
+                                        return new_term(TT_OTHER, d);
+                                }
+                                struct define_term *dt = GC_malloc(sizeof *dt);
+                                if (dt == NULL) enomem();
+                                dt->name = get_symbol_name(pd.vec[0]);
+                                dt->binding = pd.vec[1];
+                                dt->next = NULL;
+                                if (first == NULL) {
+                                        assert(last == NULL);
+                                        first = dt;
+                                } else {
+                                        assert(last != NULL);
+                                        last->next = dt;
+                                }
+                                last = dt;
+                        }
+                        if (!is_NIL(it)) return new_term(TT_OTHER, d);
+                        struct term *rv = new_term(TT_DEFINE, d);
+                        rv->u.define = first;
+                        return rv;
+
+                }
         }
         struct term *rv = new_term(TT_APP, d);
         rv->u.app.left = head;
@@ -215,3 +251,11 @@ struct guarded_term *term_as_guarded_term(struct term *t)
         assert(t->type == TT_GUARDED);
         return t->u.guarded;
 }
+
+// defined for TT_DEFINE
+struct define_term *term_as_define_term(struct term *t)
+{
+        assert(t->type == TT_DEFINE);
+        return t->u.define;
+}
+

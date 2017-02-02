@@ -173,6 +173,29 @@ static struct datum *eval_term(struct term *t,
                 env_bind(nenv, mt->var, rv);
                 return rv;
         }
+        case TT_DEFINE:
+                // (DEFINE (x t) ... (x t))
+                // Basically like TT_MU, except that there are multiple
+                // mutually recursive definitions and we do not create
+                // a fresh environment (we leave the bindings in the
+                // current environment)
+        {
+                struct define_term *dt = term_as_define_term(t);
+                // bind blackholes
+                for (struct define_term *it = dt; it != NULL; it = it->next) {
+                        env_bind(env, it->name, make_error(get_original_sexp(t),
+                                                           "Infinite recursion"
+                                                           " involving %s",
+                                                           it->name));
+                }
+                // evaluate and re-bind the definitions
+                for (struct define_term *it = dt; it != NULL; it = it->next) {
+                        struct datum *val = eval_datum(it->binding, env);
+                        env_bind(env, it->name, val);
+                }
+                return make_NIL();
+        }
+
         case TT_ABS:
                 // Here we evaluate an abstraction.  The result is a
                 // closure, that is, essentially a pair of the

@@ -43,6 +43,8 @@ enum term_type {
         TT_MU,
         //TT_PAIR,  //replaced by TT_DATA
         TT_GUARDED,
+        // extensions
+        TT_DEFINE,
 };
 
 
@@ -99,6 +101,12 @@ struct guarded_term {
         struct guarded_term *next;
 };
 
+struct define_term {
+        const char *name;
+        struct datum *binding;
+        struct define_term *next;
+}; 
+
 struct term *parse_sexp_as_term(struct datum *);
 
 enum term_type get_term_type(struct term *);
@@ -122,5 +130,8 @@ struct mu_term *term_as_mu_term(struct term *);
 
 // defined for TT_GUARDED
 struct guarded_term *term_as_guarded_term(struct term *);
+
+// defined for TT_DEFINE
+struct define_term *term_as_define_term(struct term *);
 
 #endif /* GUARD_AST_H */
